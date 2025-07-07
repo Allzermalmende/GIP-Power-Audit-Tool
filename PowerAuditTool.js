@@ -106,7 +106,7 @@ function App() {
       const next = slots.find(s => s.hour > now.getHours()) || slots[0];
       const def = `${weekday}, ${next.label}`;
       setWalkthrough(def);
-      setSection(map[def] || allSecs[0] || '');
+      setSection(map[def] || sections[0] || '');
     } catch (e) {
       console.error('loadWalkthroughs error', e);
       alert('Unable to load walkthroughs');

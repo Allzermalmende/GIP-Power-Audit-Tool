@@ -86,10 +86,17 @@ function App() {
       const options = data.map(r => r[0]);
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-      // All possible sections come from the fourth column (D) of the Read sheet
-      const sections = (data[0] && data[0][3])
-        ? data[0][3].split(',').map(s => s.trim())
-        : [];
+            // All possible sections: collect from column D across all rows
+      const sectionSet = new Set();
+      data.forEach(r => {
+        if (r[3]) {
+          r[3].split(',').forEach(s => {
+            const trimmed = s.trim();
+            if (trimmed) sectionSet.add(trimmed);
+          });
+        }
+      });
+      const sections = Array.from(sectionSet);
 
       setWalkOptions(options);
       setRecommendedMap(map);

@@ -81,7 +81,7 @@ function App() {
   async function loadWalkthroughs() {
     try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A1:D` });
+      const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A2:D` });
       const data = resp.result.values || [];
       const options = data.map(r => r[0]);
       const map = {};

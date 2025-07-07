@@ -83,13 +83,17 @@ function App() {
       // Recommended section from column B
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-      // All sections from column D
-      const secs = data.map(r => r[3]).filter(s => s).map(s => s.trim());
+            // All possible sections from the fourth column (D) of the Read sheet
+      // All possible sections come from every row’s fourth column (D)
+      const secs = data
+        .map(r => r[3])        // extract 4th column
+        .filter(s => s)         // remove empty
+        .map(s => s.trim());
 
       setWalkOptions(walks);
       setRecommendedMap(map);
       setAllSections(secs);
-      setSectionsList(secs);
+      setSectionsList(secs);(secs);
 
       // Default walkthrough based on current slot
       const now = new Date();

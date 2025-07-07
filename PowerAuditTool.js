@@ -27,6 +27,8 @@ function App() {
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
+  // Full list of sections from Read sheet column D
+  const [allSections, setAllSections] = useState([]);
 
   // Stage 1 & 2 state
   const [stage, setStage] = useState(1);

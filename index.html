@@ -11,27 +11,9 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
-  <!-- Google APIs -->
-  <script>
-    // Patch iframe src to upgrade mixed-content OAuth iframe to HTTPS
-    (function() {
-      const origCreate = document.createElement;
-      document.createElement = function(tagName) {
-        const el = origCreate.call(document, tagName);
-        if (tagName.toLowerCase() === 'iframe') {
-          const origSetAttribute = el.setAttribute.bind(el);
-          el.setAttribute = function(name, value) {
-            if (name === 'src' && typeof value === 'string' && value.startsWith('http://developers.google.com')) {
-              value = value.replace(/^http:\/\//, 'https://');
-            }
-            return origSetAttribute(name, value);
-          };
-        }
-        return el;
-      };
-    })();
-  </script>
-  <script src="https://apis.google.com/js/api.js"></script>
+  <!-- Google APIs -->$1
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- Babel for in-browser JSX transpilation -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>

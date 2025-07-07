@@ -83,17 +83,22 @@ function App() {
       // Recommended section from column B
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-            // All possible sections from the fourth column (D) of the Read sheet
-      // All possible sections come from every row’s fourth column (D)
-      const secs = data
-        .map(r => r[3])        // extract 4th column
-        .filter(s => s)         // remove empty
-        .map(s => s.trim());
+            // All sections: split every comma-separated list in column D across all rows
+      const sectionSet = new Set();
+      data.forEach(r => {
+        if (r[3]) {
+          r[3].split(',').forEach(s => {
+            const trimmed = s.trim();
+            if (trimmed) sectionSet.add(trimmed);
+          });
+        }
+      });
+      const secs = Array.from(sectionSet);
 
       setWalkOptions(walks);
       setRecommendedMap(map);
       setAllSections(secs);
-      setSectionsList(secs);(secs);
+      setSectionsList(secs);
 
       // Default walkthrough based on current slot
       const now = new Date();

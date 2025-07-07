@@ -60,11 +60,18 @@ function App() {
 
   // Initialize Google API
   useEffect(() => {
-    window.gapi.load('client:auth2', () => {
-      window.gapi.client
-        .init({ apiKey: API_KEY, clientId: CLIENT_ID, discoveryDocs: DISCOVERY_DOCS, scope: SCOPES })
-        .then(() => { setGapiReady(true); loadWalkthroughs(); });
-    });
+    const waitForGapi = () => {
+      if (window.gapi && window.gapi.load) {
+        window.gapi.load('client:auth2', () => {
+          window.gapi.client
+            .init({ apiKey: API_KEY, clientId: CLIENT_ID, discoveryDocs: DISCOVERY_DOCS, scope: SCOPES })
+            .then(() => { setGapiReady(true); loadWalkthroughs(); });
+        });
+      } else {
+        setTimeout(waitForGapi, 100);
+      }
+    };
+    waitForGapi();
   }, []);
 
   async function loadWalkthroughs() {

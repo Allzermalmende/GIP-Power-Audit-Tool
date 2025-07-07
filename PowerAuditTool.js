@@ -86,11 +86,15 @@ function App() {
       const options = data.map(r => r[0]);
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-      const allSecs = (data[0] && data[0][3]) ? data[0][3].split(',').map(s => s.trim()) : [];
+      // All possible sections come from the fourth column (D) of the Read sheet
+      const sections = (data[0] && data[0][3])
+        ? data[0][3].split(',').map(s => s.trim())
+        : [];
 
       setWalkOptions(options);
       setRecommendedMap(map);
-      setSectionsList(allSecs);
+      setAllSections(sections);
+      setSectionsList(sections);
 
       // Compute default walkthrough
       const now = new Date();

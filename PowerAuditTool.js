@@ -5,7 +5,7 @@
 const { useState, useEffect } = React;
 
 // OAuth 2.0 Client ID and API key
-const CLIENT_ID = '335120852310-nhoebt829sm5eaam53ga54fnifuct4g2.apps.googleusercontent.com';
+dconst CLIENT_ID = '335120852310-nhoebt829sm5eaam53ga54fnifuct4g2.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyCPGFbUcMmnS3HB4XKfiY9I2TdTC1hvx4I';
 
 // Spreadsheet and Drive IDs
@@ -26,7 +26,6 @@ function App() {
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
-  const [allSections, setAllSections] = useState([]);
 
   // Stage control & data
   const [stage, setStage] = useState(1);
@@ -53,12 +52,12 @@ function App() {
       const client = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
-        callback: resp => {
+        callback: (resp) => {
           if (resp.error) {
             console.error('Token client error', resp);
-          } else {
-            setAccessToken(resp.access_token);
+            return;
           }
+          setAccessToken(resp.access_token);
         }
       });
       setTokenClient(client);
@@ -86,7 +85,7 @@ function App() {
       // Recommended map from col A->col B
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-      // All possible sections: parse column D uniquely
+      // All possible sections: parse every row's column D, unique
       const secSet = new Set();
       data.forEach(r => {
         if (r[3]) r[3].split(',').forEach(s => secSet.add(s.trim()));
@@ -95,10 +94,9 @@ function App() {
 
       setWalkOptions(walks);
       setRecommendedMap(map);
-      setAllSections(allSecs);
       setSectionsList(allSecs);
 
-      // Default walkthrough based on current slot
+      // Default walkthrough: next scheduled slot
       const now = new Date();
       const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
       const slots = [
@@ -108,6 +106,7 @@ function App() {
       const nextSlot = slots.find(s => s.hour > now.getHours()) || slots[0];
       const defaultWalk = `${weekday}, ${nextSlot.label}`;
 
+      // Set default selections
       setWalkthrough(defaultWalk);
       setSection(map[defaultWalk] || allSecs[0] || '');
     } catch (e) {
@@ -119,8 +118,9 @@ function App() {
   // When user overrides walkthrough
   function handleWalkthroughChange(val) {
     setWalkthrough(val);
-    setSectionsList(allSections);
-    setSection(recommendedMap[val] || allSections[0] || '');
+    // always show full sections list
+    setSectionsList(sectionsList);
+    setSection(recommendedMap[val] || sectionsList[0] || '');
   }
 
   // Proceed from Stage1 to Stage2
@@ -139,9 +139,7 @@ function App() {
       const newRows = [];
       data.forEach(r => {
         const cab = r[0];
-        for (let c = 1; c <= 12; c++) {
-          if (r[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: r[c], amperage:'', issue:false, info:'', extra:'' });
-        }
+        for (let c = 1; c <= 12; c++) if (r[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: r[c], amperage:'', issue:false, info:'', extra:'' });
       });
       setRows(newRows);
       setStage(2);
@@ -156,26 +154,26 @@ function App() {
   function addRow() { setRows([...rows,{ cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'' }]); }
   function deleteRow(i) { setRows(rows.filter((_,j)=>j!==i)); }
 
-  // Submit Stage2
+  // Submit Stage2, upload CSV and update Write sheet
   async function submitAudit() {
     if (!confirm('Finish audit?')) return;
     const now = new Date(), ds = now.toISOString().slice(0,10);
     const fileName = `Power Audit ${ds} ${walkthrough}.csv`;
     const hdr = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
-    let csv = hdr.join(',') + '\n';
-    rows.forEach(r => csv += [r.cabinet,r.loc,r.label,r.amperage,r.issue,r.info,r.extra,now.toISOString(),userName,walkthrough].join(',') + '\n');
+    let csvContent = hdr.join(',')+'\n';
+    rows.forEach(r => csvContent += [r.cabinet,r.loc,r.label,r.amperage,r.issue,r.info,r.extra,now.toISOString(),userName,walkthrough].join(',')+'\n');
     try {
       await window.gapi.client.drive.files.create({
         resource:{ name:fileName, mimeType:'text/csv', parents:[DRIVE_FOLDER_ID] },
-        media:{ mimeType:'text/csv', body:csv }
+        media:{ mimeType:'text/csv', body:csvContent }
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
-      const headerRow = headResp.result.values[0]||[];
+      const h = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+      const headerRow = h.result.values[0]||[];
       const colIdx = headerRow.indexOf(walkthrough);
       if(colIdx<0) throw 'Walkthrough not found';
-      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A2:A` });
-      const secList = secResp.result.values.map(r=>r[0]);
+      const s = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A2:A` });
+      const secList = s.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(section);
       if(rowIdx<0) throw 'Section not found';
       const cell = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+2}`;
@@ -188,26 +186,25 @@ function App() {
     }
   }
 
-  if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
+  if (!gapiLoaded) return React.createElement('div',null,'Loading Google API...');
 
-  return React.createElement('div', { style:{ padding:20 } },
-    stage === 1
-      ? React.createElement('div', null,
-          React.createElement('h2', null, 'Power Audit - Stage 1'),
+  return React.createElement('div',{style:{padding:20}},
+    stage===1
+      ? React.createElement('div',null,
+          React.createElement('h2',null,'Power Audit - Stage 1'),
           accessToken==null
-            ? React.createElement('button', { onClick:handleAuth }, 'Sign in with Google')
-            : React.createElement('div', null,
-                'Walkthrough: ', React.createElement('select', { value:walkthrough, onChange:e=>handleWalkthroughChange(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
-                'Section: ', React.createElement('select',{ value:section, onChange:e=>setSection(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), sectionsList.map(s=>React.createElement('option',{key:s,value:s}, s))), React.createElement('br'),
-                'Auditor: ', React.createElement('input',{ value:userName, onChange:e=>setUserName(e.target.value), placeholder:'Your name' }), React.createElement('br'),
-                React.createElement('button',{ onClick:proceedToStage2 }, 'Proceed')
+            ? React.createElement('button',{onClick:handleAuth},'Sign in with Google')
+            : React.createElement('div',null,
+                'Walkthrough: ', React.createElement('select',{value:walkthrough,onChange:e=>handleWalkthroughChange(e.target.value)},React.createElement('option',{value:''},'-- select --'),walkOptions.map(w=>React.createElement('option',{key:w,value:w},w))),React.createElement('br'),
+                'Section: ', React.createElement('select',{value:section,onChange:e=>setSection(e.target.value)},React.createElement('option',{value:''},'-- select --'),sectionsList.map(s=>React.createElement('option',{key:s,value:s},s))),React.createElement('br'),
+                'Auditor: ', React.createElement('input',{value:userName,onChange:e=>setUserName(e.target.value),placeholder:'Your name'}),React.createElement('br'),
+                React.createElement('button',{onClick:proceedToStage2},'Proceed')
               )
         )
-      : React.createElement('div', null,
-          React.createElement('h2', null, 'Power Audit - Stage 2'),
-          React.createElement('table',{ border:1, cellPadding:5 }, React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h=>React.createElement('th',{key:h}, h)))), React.createElement('tbody', null, rows.map((r,i)=>React.createElement('tr',{key:i}, React.createElement('td', null, React.createElement('input',{ value:r.cabinet, readOnly:true })), React.createElement('td', null, React.createElement('input',{ value:r.loc, readOnly:true })), React.createElement('td', null, React.createElement('input',{ value:r.label, readOnly:true })), React.createElement('td', null, React.createElement('input',{ type:'number', step:'0.1', value:r.amperage, onChange:e=>updateRow(i,'amperage', e.target.value)})), React.createElement('td', null, React.createElement('input',{ type:'checkbox', checked:r.issue, onChange:e=>updateRow(i,'issue', e.target.checked)})), React.createElement('td', null, r.issue && React.createElement('select',{ value:r.info, onChange:e=>updateRow(i,'info', e.target.value)}, React.createElement('option',{value:''}), React.createElement('option',null,'Previous information doesn't match'), React.createElement('option',null,'Other'))), React.createElement('td',null,(r.info==='Other')&&React.createElement('input',{ value:r.extra, onChange:e=>updateRow(i,'extra', e.target.value), placeholder:'Further explanation'})), React.createElement('td',null,React.createElement('button',{ onClick:()=>deleteRow(i)}, 'Delete')))))), React.createElement('button',{ onClick:addRow }, 'Add Row'), React.createElement('button',{ onClick:submitAudit }, 'Submit Audit'))
-  );
-}
+      : React.createElement('div',null,
+          React.createElement('h2',null,'Power Audit - Stage 2'),
+          React.createElement('table',{border:1,cellPadding:5},React.createElement('thead',null,React.createElement('tr',null,['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h=>React.createElement('th',{key:h},h)))),React.createElement('tbody',null,rows.map((r,i)=React.createElement('tr',{key:i},React.createElement('td',null,React.createElement('input',{value:r.cabinet,readOnly:true})),React.createElement('td',null,React.createElement('input',{value:r.loc,readOnly:true})),React.createElement('td',null,React.createElement('input',{value:r.label,readOnly:true})),React.createElement('td',null,React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value)})),React.createElement('td',null,React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),React.createElement('td',null,r.issue&&React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)},React.createElement('option',{value:''}),React.createElement('option',null,'Previous information doesn\'t match'),React.createElement('option',null,'Other'))),React.createElement('td',null,(r.info==='Other')&&React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),React.createElement('td',null,React.createElement('button',{onClick:()=>deleteRow(i)},'Delete')))))),React.createElement('button',{onClick:addRow},'Add Row'),React.createElement('button',{onClick:submitAudit},'Submit Audit'))
+);
 
 // Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));

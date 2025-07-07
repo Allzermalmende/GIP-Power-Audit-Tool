@@ -85,86 +85,57 @@ function App() {
       // Ensure Sheets API is loaded
       await window.gapi.client.load('sheets', 'v4');
 
-      const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A1:D` });
+      const sheetsValues = window.gapi.client.sheets.spreadsheets.values;
+      const resp = await sheetsValues.get({
+        spreadsheetId: BREAKDOWN_SHEET_ID,
+        range: `${BREAKDOWN_READ}!A1:D`
+      });
       const data = resp.result.values || [];
-      const options = data.map(r => r[0]);
-      const map = {};
-      data.forEach(r => { map[r[0]] = r[1]; });
 
-      // All possible sections: collect from column D across all rows
+      // Walkthrough options and recommended map
+      const walks = data.map(r => r[0] || '').filter(w => w);
+      const map = {};
+      data.forEach(r => {
+        if (r[0]) map[r[0]] = r[1] || '';
+      });
+
+      // Collect all sections from column D across rows
       const sectionSet = new Set();
       data.forEach(r => {
-        if (r[3]) {
-          r[3].split(',').forEach(s => {
-            const trimmed = s.trim();
-            if (trimmed) sectionSet.add(trimmed);
-          });
-        }
+        const cell = r[3] || '';
+        cell.split(',').forEach(s => {
+          const t = s.trim();
+          if (t) sectionSet.add(t);
+        });
       });
       const sections = Array.from(sectionSet);
 
-      setWalkOptions(options);
+      setWalkOptions(walks);
       setRecommendedMap(map);
       setAllSections(sections);
       setSectionsList(sections);
 
-      // Compute default walkthrough
+      // Determine default walkthrough based on current time
       const now = new Date();
-      const weekday = now.toLocaleDateString('en-US',{ weekday:'long' });
+      const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
       const slots = [
-        {label:'2am',hour:2},{label:'6am',hour:6},{label:'10am',hour:10},
-        {label:'2pm',hour:14},{label:'6pm',hour:18},{label:'10pm',hour:22}
+        { label: '2am', hour: 2 },
+        { label: '6am', hour: 6 },
+        { label: '10am', hour: 10 },
+        { label: '2pm', hour: 14 },
+        { label: '6pm', hour: 18 },
+        { label: '10pm', hour: 22 }
       ];
-      const next = slots.find(s => s.hour > now.getHours()) || slots[0];
-      const def = `${weekday}, ${next.label}`;
-      setWalkthrough(def);
-      setSection(map[def] || sections[0] || '');
+      const nextSlot = slots.find(s => s.hour > now.getHours()) || slots[0];
+      const defaultWalk = `${weekday}, ${nextSlot.label}`;
+
+      setWalkthrough(defaultWalk);
+      setSection(map[defaultWalk] || sections[0] || '');
     } catch (e) {
       console.error('loadWalkthroughs error', e);
       alert('Unable to load walkthroughs');
     }
-  }
-!A1:D` });
-      const data = resp.result.values || [];
-      const options = data.map(r => r[0]);
-      const map = {};
-      data.forEach(r => { map[r[0]] = r[1]; });
-            // All possible sections: collect from column D across all rows
-      const sectionSet = new Set();
-      data.forEach(r => {
-        if (r[3]) {
-          r[3].split(',').forEach(s => {
-            const trimmed = s.trim();
-            if (trimmed) sectionSet.add(trimmed);
-          });
-        }
-      });
-      const sections = Array.from(sectionSet);
-
-      setWalkOptions(options);
-      setRecommendedMap(map);
-      setAllSections(sections);
-      setSectionsList(sections);
-
-      // Compute default walkthrough
-      const now = new Date();
-      const weekday = now.toLocaleDateString('en-US',{ weekday:'long' });
-      const slots = [
-        {label:'2am',hour:2},{label:'6am',hour:6},{label:'10am',hour:10},
-        {label:'2pm',hour:14},{label:'6pm',hour:18},{label:'10pm',hour:22}
-      ];
-      const next = slots.find(s => s.hour > now.getHours()) || slots[0];
-      const def = `${weekday}, ${next.label}`;
-      setWalkthrough(def);
-      setSection(map[def] || sections[0] || '');
-    } catch (e) {
-      console.error('loadWalkthroughs error', e);
-      alert('Unable to load walkthroughs');
-    }
-  }
-
-  // Stage 1 submit moves to Stage 2
+  }// Stage 1 submit moves to Stage 2
   async function proceedToStage2() {
     if (!accessToken) { handleAuth(); return; }
     if (!walkthrough || !section || !userName) { alert('Complete Stage 1'); return; }

@@ -81,7 +81,7 @@ function App() {
   async function loadWalkthroughs() {
     try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A2:D` });
+      const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A1:D` });
       const data = resp.result.values || [];
       const options = data.map(r => r[0]);
       const map = {};
@@ -119,7 +119,7 @@ function App() {
     if (!walkthrough || !section || !userName) { alert('Complete Stage 1'); return; }
     try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const resp = await sheets.get({ spreadsheetId: CHECKLIST_SHEET_ID, range: `${section}!A2:M` });
+      const resp = await sheets.get({ spreadsheetId: CHECKLIST_SHEET_ID, range: `${section}!A1:M` });
       const data = resp.result.values || [];
       const locMap = {
         1:'Left 1',2:'Left 2',3:'Left 3',4:'Left 4',
@@ -166,7 +166,7 @@ function App() {
       const hdrRow = headResp.result.values[0] || [];
       const colIdx = hdrRow.indexOf(walkthrough);
       if (colIdx < 0) throw 'Walkthrough not found';
-      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A2:A` });
+      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(section);
       if (rowIdx < 0) throw 'Section not found';

@@ -83,17 +83,8 @@ function App() {
       // Recommended section from column B
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-            // All sections: split every comma-separated list in column D across all rows
-      const sectionSet = new Set();
-      data.forEach(r => {
-        if (r[3]) {
-          r[3].split(',').forEach(s => {
-            const trimmed = s.trim();
-            if (trimmed) sectionSet.add(trimmed);
-          });
-        }
-      });
-      const secs = Array.from(sectionSet);
+      // All sections from column D
+      const secs = data.map(r => r[3]).filter(s => s).map(s => s.trim());
 
       setWalkOptions(walks);
       setRecommendedMap(map);

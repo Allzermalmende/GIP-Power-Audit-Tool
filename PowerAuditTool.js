@@ -80,6 +80,9 @@ function App() {
   // Load breakdown sheet for Stage 1
   async function loadWalkthroughs() {
     try {
+      // Ensure Sheets API is loaded
+      await window.gapi.client.load('sheets', 'v4');
+    try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A1:D` });
       const data = resp.result.values || [];

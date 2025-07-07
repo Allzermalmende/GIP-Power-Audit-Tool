@@ -1,11 +1,11 @@
-// Note: Make sure your index.html includes:
+// Note: index.html should include the GIS client script in <head>:
 // <script src="https://accounts.google.com/gsi/client" async defer></script>
-// in the <head> before loading PowerAuditTool.js
+// Then load this PowerAuditTool.js via Babel.
 
 const { useState, useEffect } = React;
 
 // OAuth 2.0 Client ID and API key
-const CLIENT_ID = '335120852310-nhoebt829sm5eaam53ga54fnifuct4g2.apps.googleusercontent.com';
+dconst CLIENT_ID = '335120852310-nhoebt829sm5eaam53ga54fnifuct4g2.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyCPGFbUcMmnS3HB4XKfiY9I2TdTC1hvx4I';
 
 // Spreadsheet and Drive IDs
@@ -15,12 +15,11 @@ const BREAKDOWN_READ      = 'Read';
 const BREAKDOWN_WRITE     = 'Write';
 const DRIVE_FOLDER_ID     = '1IQNHuSZMDoqO5zh1qcIgFAYCtXdxjShN';
 
-// Discovery docs
+// Google API discovery docs and scopes
 const DISCOVERY_DOCS = [
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
   'https://sheets.googleapis.com/$discovery/rest?version=v4'
 ];
-// OAuth scopes
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
 function App() {
@@ -28,7 +27,7 @@ function App() {
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
 
-  // Stage 1 & 2 state
+  // Stage control & data
   const [stage, setStage] = useState(1);
   const [walkOptions, setWalkOptions] = useState([]);
   const [recommendedMap, setRecommendedMap] = useState({});
@@ -38,7 +37,7 @@ function App() {
   const [userName, setUserName] = useState('');
   const [rows, setRows] = useState([]);
 
-  // Load gapi client libraries
+  // Load gapi client
   useEffect(() => {
     window.gapi.load('client', () => {
       window.gapi.client.init({ apiKey: API_KEY, discoveryDocs: DISCOVERY_DOCS })
@@ -47,7 +46,7 @@ function App() {
     });
   }, []);
 
-  // Initialize GIS token client once gapi is ready
+  // Initialize GIS token client after gapi ready
   useEffect(() => {
     if (gapiLoaded && !tokenClient) {
       const client = google.accounts.oauth2.initTokenClient({
@@ -59,57 +58,72 @@ function App() {
             return;
           }
           setAccessToken(resp.access_token);
-        },
+        }
       });
       setTokenClient(client);
     }
   }, [gapiLoaded]);
 
-  // Once we have an access token, load the breakdown data
+  // Once authenticated, load breakdown info
   useEffect(() => {
-    if (accessToken) {
-      loadWalkthroughs();
-    }
+    if (accessToken) loadWalkthroughs();
   }, [accessToken]);
 
-  // Trigger GIS consent flow
   function handleAuth() {
     tokenClient.requestAccessToken({ prompt: '' });
   }
 
-  // Load breakdown sheet for Stage 1
+  // Load Stage 1 data from Breakdown Read sheet
   async function loadWalkthroughs() {
     try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const resp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_READ}!A2:D` });
       const data = resp.result.values || [];
-      const options = data.map(r => r[0]);
+
+      // Walkthrough options from column A
+      const walks = data.map(r => r[0]);
+      // Recommended map from col A->col B
       const map = {};
       data.forEach(r => { map[r[0]] = r[1]; });
-      const allSecs = (data[0] && data[0][3]) ? data[0][3].split(',').map(s => s.trim()) : [];
+      // All possible sections: parse every row's column D, unique
+      const secSet = new Set();
+      data.forEach(r => {
+        if (r[3]) r[3].split(',').forEach(s => secSet.add(s.trim()));
+      });
+      const allSecs = Array.from(secSet);
 
-      setWalkOptions(options);
+      setWalkOptions(walks);
       setRecommendedMap(map);
       setSectionsList(allSecs);
 
-      // Compute default walkthrough
+      // Default walkthrough: next scheduled slot
       const now = new Date();
-      const weekday = now.toLocaleDateString('en-US',{ weekday:'long' });
+      const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
       const slots = [
-        {label:'2am',hour:2},{label:'6am',hour:6},{label:'10am',hour:10},
-        {label:'2pm',hour:14},{label:'6pm',hour:18},{label:'10pm',hour:22}
+        { label: '2am', hour: 2 }, { label: '6am', hour: 6 }, { label: '10am', hour: 10 },
+        { label: '2pm', hour: 14 }, { label: '6pm', hour: 18 }, { label: '10pm', hour: 22 }
       ];
-      const next = slots.find(s => s.hour > now.getHours()) || slots[0];
-      const def = `${weekday}, ${next.label}`;
-      setWalkthrough(def);
-      setSection(map[def] || allSecs[0] || '');
+      const nextSlot = slots.find(s => s.hour > now.getHours()) || slots[0];
+      const defaultWalk = `${weekday}, ${nextSlot.label}`;
+
+      // Set default selections
+      setWalkthrough(defaultWalk);
+      setSection(map[defaultWalk] || allSecs[0] || '');
     } catch (e) {
       console.error('loadWalkthroughs error', e);
       alert('Unable to load walkthroughs');
     }
   }
 
-  // Stage 1 submit moves to Stage 2
+  // When user overrides walkthrough
+  function handleWalkthroughChange(val) {
+    setWalkthrough(val);
+    // always show full sections list
+    setSectionsList(sectionsList);
+    setSection(recommendedMap[val] || sectionsList[0] || '');
+  }
+
+  // Proceed from Stage1 to Stage2
   async function proceedToStage2() {
     if (!accessToken) { handleAuth(); return; }
     if (!walkthrough || !section || !userName) { alert('Complete Stage 1'); return; }
@@ -123,11 +137,9 @@ function App() {
         9:'Horizontal 1',10:'Horizontal 2',11:'Horizontal 3',12:'Horizontal 4'
       };
       const newRows = [];
-      data.forEach(row => {
-        const cab = row[0];
-        for (let c=1; c<=12; c++) {
-          if (row[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: row[c], amperage:'', issue:false, info:'', extra:'' });
-        }
+      data.forEach(r => {
+        const cab = r[0];
+        for (let c = 1; c <= 12; c++) if (r[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: r[c], amperage:'', issue:false, info:'', extra:'' });
       });
       setRows(newRows);
       setStage(2);
@@ -137,80 +149,62 @@ function App() {
     }
   }
 
-  // Row handlers
-  function updateRow(i, f, v) { const u = [...rows]; u[i][f] = v; setRows(u); }
-  function addRow() { setRows([...rows, { cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'' }]); }
-  function deleteRow(i) { setRows(rows.filter((_, j) => j !== i)); }
+  // Row operations
+  function updateRow(i,f,v) { const u=[...rows]; u[i][f]=v; setRows(u); }
+  function addRow() { setRows([...rows,{ cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'' }]); }
+  function deleteRow(i) { setRows(rows.filter((_,j)=>j!==i)); }
 
-  // Submit Stage 2
+  // Submit Stage2, upload CSV and update Write sheet
   async function submitAudit() {
     if (!confirm('Finish audit?')) return;
     const now = new Date(), ds = now.toISOString().slice(0,10);
     const fileName = `Power Audit ${ds} ${walkthrough}.csv`;
-    const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
-    let csv = header.join(',') + '\n';
-    rows.forEach(r => {
-      csv += [r.cabinet,r.loc,r.label,r.amperage,r.issue,r.info,r.extra,now.toISOString(),userName,walkthrough].join(',') + '\n';
-    });
+    const hdr = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
+    let csvContent = hdr.join(',')+'\n';
+    rows.forEach(r => csvContent += [r.cabinet,r.loc,r.label,r.amperage,r.issue,r.info,r.extra,now.toISOString(),userName,walkthrough].join(',')+'\n');
     try {
       await window.gapi.client.drive.files.create({
-        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
-        media: { mimeType: 'text/csv', body: csv }
+        resource:{ name:fileName, mimeType:'text/csv', parents:[DRIVE_FOLDER_ID] },
+        media:{ mimeType:'text/csv', body:csvContent }
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
-      const hdrRow = headResp.result.values[0] || [];
-      const colIdx = hdrRow.indexOf(walkthrough);
-      if (colIdx < 0) throw 'Walkthrough not found';
-      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A2:A` });
-      const secList = secResp.result.values.map(r=>r[0]);
+      const h = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+      const headerRow = h.result.values[0]||[];
+      const colIdx = headerRow.indexOf(walkthrough);
+      if(colIdx<0) throw 'Walkthrough not found';
+      const s = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A2:A` });
+      const secList = s.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(section);
-      if (rowIdx < 0) throw 'Section not found';
-      const target = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+2}`;
-      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
+      if(rowIdx<0) throw 'Section not found';
+      const cell = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+2}`;
+      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: cell, valueInputOption:'RAW', resource:{ values:[[ds]] } });
       alert('Audit saved!');
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');
-    } catch (e) {
-      console.error('submitAudit error', e);
+    } catch(e) {
+      console.error('submitAudit error',e);
       alert('Failed to submit audit');
     }
   }
 
-  if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
+  if (!gapiLoaded) return React.createElement('div',null,'Loading Google API...');
 
-  return React.createElement('div', { style:{ padding: 20 } },
-    stage === 1
-      ? React.createElement('div', null,
-          React.createElement('h2', null, 'Power Audit - Stage 1'),
-          accessToken == null
-            ? React.createElement('button', { onClick: handleAuth }, 'Sign in with Google')
-            : React.createElement('div', null,
-                'Walkthrough: ', React.createElement('select', { value: walkthrough, onChange: e=> handleWalkthroughChange(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
-                'Section: ', React.createElement('select', { value: section, onChange:e=>setSection(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), sectionsList.map(s=>React.createElement('option',{key:s,value:s}, s))), React.createElement('br'),
-                'Auditor: ', React.createElement('input',{ value:userName, onChange:e=>setUserName(e.target.value), placeholder:'Your name' }), React.createElement('br'),
-                React.createElement('button', { onClick: proceedToStage2 }, 'Proceed')
+  return React.createElement('div',{style:{padding:20}},
+    stage===1
+      ? React.createElement('div',null,
+          React.createElement('h2',null,'Power Audit - Stage 1'),
+          accessToken==null
+            ? React.createElement('button',{onClick:handleAuth},'Sign in with Google')
+            : React.createElement('div',null,
+                'Walkthrough: ', React.createElement('select',{value:walkthrough,onChange:e=>handleWalkthroughChange(e.target.value)},React.createElement('option',{value:''},'-- select --'),walkOptions.map(w=>React.createElement('option',{key:w,value:w},w))),React.createElement('br'),
+                'Section: ', React.createElement('select',{value:section,onChange:e=>setSection(e.target.value)},React.createElement('option',{value:''},'-- select --'),sectionsList.map(s=>React.createElement('option',{key:s,value:s},s))),React.createElement('br'),
+                'Auditor: ', React.createElement('input',{value:userName,onChange:e=>setUserName(e.target.value),placeholder:'Your name'}),React.createElement('br'),
+                React.createElement('button',{onClick:proceedToStage2},'Proceed')
               )
         )
-      : React.createElement('div', null,
-          React.createElement('h2', null, 'Power Audit - Stage 2'),
-          React.createElement('table', { border:1, cellPadding:5 },
-            React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h=>React.createElement('th',{key:h},h)))),
-            React.createElement('tbody', null, rows.map((r,i)=>React.createElement('tr',{key:i},
-              React.createElement('td', null, React.createElement('input',{value:r.cabinet,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{value:r.loc,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{value:r.label,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value)})),
-              React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
-              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, React.createElement('option',{value:''}), React.createElement('option',null,'Previous information doesn\'t match'), React.createElement('option',null,'Other'))),
-              React.createElement('td', null, (r.info==='Other') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),
-              React.createElement('td', null, React.createElement('button',{onClick:()=>deleteRow(i)},'Delete'))
-            )))
-          ),
-          React.createElement('button',{onClick:addRow},'Add Row'),
-          React.createElement('button',{onClick:submitAudit},'Submit Audit')
-        )
-  );
-}
+      : React.createElement('div',null,
+          React.createElement('h2',null,'Power Audit - Stage 2'),
+          React.createElement('table',{border:1,cellPadding:5},React.createElement('thead',null,React.createElement('tr',null,['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h=>React.createElement('th',{key:h},h)))),React.createElement('tbody',null,rows.map((r,i)=React.createElement('tr',{key:i},React.createElement('td',null,React.createElement('input',{value:r.cabinet,readOnly:true})),React.createElement('td',null,React.createElement('input',{value:r.loc,readOnly:true})),React.createElement('td',null,React.createElement('input',{value:r.label,readOnly:true})),React.createElement('td',null,React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value)})),React.createElement('td',null,React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),React.createElement('td',null,r.issue&&React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)},React.createElement('option',{value:''}),React.createElement('option',null,'Previous information doesn\'t match'),React.createElement('option',null,'Other'))),React.createElement('td',null,(r.info==='Other')&&React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),React.createElement('td',null,React.createElement('button',{onClick:()=>deleteRow(i)},'Delete')))))),React.createElement('button',{onClick:addRow},'Add Row'),React.createElement('button',{onClick:submitAudit},'Submit Audit'))
+);
 
 // Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));

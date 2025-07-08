@@ -222,15 +222,18 @@ function App() {
         media: { mimeType: 'text/csv', body: csv }
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!B1:1` });
       const hdrRow = headResp.result.values[0] || [];
       const colIdx = hdrRow.indexOf(selWalkthrough);
+      if (colIdx < 0) throw 'Walkthrough not found';
+      // Column letter: B (66) + index
+      const colLetter = String.fromCharCode(66 + colIdx);
       if (colIdx < 0) throw 'Walkthrough not found';
       const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(selSection);
       if (rowIdx < 0) throw 'Section not found';
-      const target = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+1}`;
+      const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
       await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
       alert('Audit saved!');
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');

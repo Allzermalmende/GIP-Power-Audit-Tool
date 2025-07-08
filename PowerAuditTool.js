@@ -60,6 +60,8 @@ function App() {
             console.error('Token client error', resp);
             return;
           }
+          // Apply the obtained token to gapi client for authorized requests
+          window.gapi.client.setToken({ access_token: resp.access_token });
           setAccessToken(resp.access_token);
         },
       });

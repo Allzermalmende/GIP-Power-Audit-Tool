@@ -193,6 +193,21 @@ function App() {
       if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
       if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
+      // If issue is checked, Info must be selected
+      if (r.issue && !r.info) {
+        alert(`Please select an Issue Type in row ${i+1}.`);
+        return;
+      }
+      // If specific info types require Further Explanation
+      if (r.issue && (r.info === 'Other' || r.info === 'Reads as error') && !r.extra) {
+        alert(`Please provide Further Explanation for row ${i+1}.`);
+        return;
+      }
+    }
+.`); return; }
+      if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
+      if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
+      if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
     }
 
     if (!confirm('Finish audit?')) return;
@@ -274,7 +289,7 @@ function App() {
                     React.createElement('option', null, 'Reading unavailable'),
                     React.createElement('option', null, 'Other') 
                                                                             )),
-              React.createElement('td', null, (r.info==='Other') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),
+              React.createElement('td', null, (r.info==='Other' || r.info==='Reads as error') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'describe error or issue'})),
               React.createElement('td', null, r.userAdded && React.createElement('button', { onClick: () => deleteRow(i) }, 'Delete'))
             )))
           ),

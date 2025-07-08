@@ -193,21 +193,6 @@ function App() {
       if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
       if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
-      // If issue is checked, Info must be selected
-      if (r.issue && !r.info) {
-        alert(`Please select an Issue Type in row ${i+1}.`);
-        return;
-      }
-      // If specific info types require Further Explanation
-      if (r.issue && (r.info === 'Other' || r.info === 'Reads as error') && !r.extra) {
-        alert(`Please provide Further Explanation for row ${i+1}.`);
-        return;
-      }
-    }
-); return; }
-      if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
-      if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
-      if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
     }
 
     if (!confirm('Finish audit?')) return;

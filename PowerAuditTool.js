@@ -219,8 +219,8 @@ function App() {
     try {
       // Multipart upload for CSV with metadata
       const boundary = 'foo_bar_baz_' + Math.random();
-      const delimiter = "\r\n--" + boundary + "\r\n";
-      const close_delim = "\r\n--" + boundary + "--";
+      const delimiter = `\r\n--${boundary}\r\n`;
+      const close_delim = `\r\n--${boundary}--`;
 
       const metadata = {
         name: fileName,
@@ -240,7 +240,7 @@ function App() {
       const createResp = await window.gapi.client.request({
         path: '/upload/drive/v3/files',
         method: 'POST',
-        params: { uploadType: 'multipart', fields: 'id,name,mimeType,parents' },
+        params: { uploadType: 'multipart' },
         headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
         body: multipartRequestBody,
         root: 'https://content.googleapis.com'

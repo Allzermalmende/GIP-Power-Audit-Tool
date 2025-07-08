@@ -218,12 +218,13 @@ function App() {
     });
     try {
       // Multipart upload for CSV with metadata
+      // Multipart upload for CSV with metadata
       const boundary = 'foo_bar_baz_' + Math.random();
-      const delimiter = `
---${boundary}
-`;
-      const close_delim = `
---${boundary}--`;
+      const delimiter = "
+--" + boundary + "
+";
+      const close_delim = "
+--" + boundary + "--";
 
       const metadata = {
         name: fileName,

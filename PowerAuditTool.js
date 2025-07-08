@@ -245,7 +245,15 @@ function App() {
       : React.createElement('div', null,
           React.createElement('h2', null, 'Power Audit - Stage 2'),
           React.createElement('table', { border:1, cellPadding:5 },
-            React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h=>React.createElement('th',{key:h},h)))),
+            React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h => h === 'Location'
+              ? React.createElement('th', { key: h }, h,
+                  React.createElement('button', {
+                    onClick: () => alert('1=closest/highest, 4=farthest/lowest'),
+                    style: { marginLeft: '4px', cursor: 'pointer' }
+                  }, '?')
+                )
+              : React.createElement('th', { key: h }, h)
+            ))),
             React.createElement('tbody', null, rows.map((r,i)=>React.createElement('tr',{key:i},
               React.createElement('td', null, React.createElement('input',{value:r.cabinet,readOnly:true})),
               React.createElement('td', null, React.createElement('input',{value:r.loc,readOnly:true})),

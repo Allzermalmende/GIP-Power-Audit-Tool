@@ -234,7 +234,7 @@ function App() {
       const rowIdx = secList.indexOf(selSection);
       if (rowIdx < 0) throw 'Section not found';
       const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
-      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
+      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'USER_ENTERED', resource:{ values:[[ds]] } });
       alert('Audit saved!');
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');
     } catch (e) {

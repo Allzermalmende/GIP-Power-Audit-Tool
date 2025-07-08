@@ -245,7 +245,7 @@ function App() {
       : React.createElement('div', null,
           React.createElement('h2', null, 'Power Audit - Stage 2'),
           React.createElement('table', { border:1, cellPadding:5 },
-            React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Info','Extra','Actions'].map(h => h === 'Location'
+            React.createElement('thead', null, React.createElement('tr', null, ['Cabinet','Location','Label','Amperage','Issue!','Issue Type','Further Explanation','Delete Row'].map(h => h === 'Location'
               ? React.createElement('th', { key: h }, h,
                   React.createElement('button', {
                     onClick: () => alert('1=closest/highest, 4=farthest/lowest'),
@@ -255,12 +255,12 @@ function App() {
               : React.createElement('th', { key: h }, h)
             ))),
             React.createElement('tbody', null, rows.map((r,i)=>React.createElement('tr',{key:i},
-              React.createElement('td', null, React.createElement('input',{value:r.cabinet,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{value:r.loc,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{value:r.label,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('if power strip is in use and devices are attached: please proceed, otherwise: please log the issue.');}})),
+              React.createElement('td', null, React.createElement('input',{value:r.cabinet, readOnly: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{value:r.loc, readOnly: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{value:r.label, readOnly: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('if devices are attached to the power strip and you see a reading of zero: please enter 0.0, otherwise: please log the issue."');}})),
               React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
-              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, React.createElement('option',{value:''}), React.createElement('option',null,'Previous information doesn\'t match'), React.createElement('option',null,'Other'))),
+              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, React.createElement('option',{value:''}), React.createElement(null,'Previous information doesn\'t match','Cabinet not found','Power strip not found','Power strip unplugged','Power strip connected but has no power','Cabinet vacant','Power strp powered but no device is plugged into it','Reading screen not found','Reads as error','Reading unavailable','Other'), React.createElement('option',null,'Other'))),
               React.createElement('td', null, (r.info==='Other') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),
               React.createElement('td', null, r.userAdded && React.createElement('button', { onClick: () => deleteRow(i) }, 'Delete'))
             )))

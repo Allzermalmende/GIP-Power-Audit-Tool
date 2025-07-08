@@ -280,8 +280,7 @@ function App() {
           ),
           React.createElement('button',{onClick:addRow},'Add Row'),
           React.createElement('button',{onClick:submitAudit},'Submit Audit')
-        )
-  );
+        );
 }
 
 // Mount the app

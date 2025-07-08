@@ -149,12 +149,12 @@ function App() {
       setSection(map[defaultWalk] || sections[0] || '');
     } catch (e) {
       console.error('loadWalkthroughs error', e);
-      alert('Unable to load walkthroughs');
+      alert('Unable to load walkthroughs.');
     }
   }// Stage 1 submit moves to Stage 2
   async function proceedToStage2() {
     if (!accessToken) { handleAuth(); return; }
-    if (!walkthrough || !section || !userName) { alert('Complete Stage 1'); return; }
+    if (!walkthrough || !section || !userName) { alert('Please complete Stage 1.'); return; }
     try {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const resp = await sheets.get({ spreadsheetId: CHECKLIST_SHEET_ID, range: `${section}!A1:M` });
@@ -175,7 +175,7 @@ function App() {
       setStage(2);
     } catch (e) {
       console.error('proceedToStage2 error', e);
-      alert('Unable to load checklist');
+      alert('Unable to load checklist.');
     }
   }
 
@@ -190,9 +190,12 @@ function App() {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       if (!r.cabinet) { alert(`Please fill the Cabinet field in row ${i+1}.`); return; }
-      if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
+      if (!r.loc)     { alert(`Please select the Location in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
-      if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
+      if (!r.amperage) { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
+      if (r.issue === true && r.info === '') { alert(`Please select the Issue Type in row ${i+1}.`); return; }
+      if (r.info === 'Reads as error' && !r.extra) { alert(`Please use the Further Explanation field in row ${i+1} to detail the error you found.`); return; }
+      if (r.info === 'Other' && !r.extra) { alert(`Please use the Further Explanation field in row ${i+1} to explain the issue you discovered.`); return; }
     }
 
     if (!confirm('Finish audit?')) return;
@@ -223,7 +226,7 @@ function App() {
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');
     } catch (e) {
       console.error('submitAudit error', e);
-      alert('Failed to submit audit');
+      alert('Failed to submit audit.');
     }
   }
 
@@ -258,9 +261,9 @@ function App() {
               React.createElement('td', null, React.createElement('input',{value:r.cabinet,readOnly:true})),
               React.createElement('td', null, React.createElement('input',{value:r.loc,readOnly:true})),
               React.createElement('td', null, React.createElement('input',{value:r.label,readOnly:true})),
-              React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('if devices are attached to the power strip and you see a reading of zero: please enter 0.0, otherwise: please log the issue."');}})),
+              React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('If devices are attached to the power strip and you see a reading of zero: please enter 0.0, otherwise: please log the issue.');}})),
               React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
-              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, 
+              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value),onBlur:e=>{if(e.target.value==='Power strip not found' || e.target.value==='Reading screen not found')alert('Please make sure to check the other side of the cabinet.');}}, 
                     React.createElement('option', { value: '' }, '-- select --'),
                     React.createElement('option', null, "Previous information doesn't match"),
                     React.createElement('option', null, 'Cabinet not found'),

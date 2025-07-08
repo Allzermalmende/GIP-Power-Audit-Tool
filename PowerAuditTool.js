@@ -190,6 +190,9 @@ function App() {
 
   // Submit Stage 2
   async function submitAudit() {
+    // Capture user-selected walkthrough and section to use in submission
+    const selWalkthrough = walkthrough;
+    const selSection = section;
     // Validation: ensure required fields are filled
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
@@ -207,7 +210,7 @@ function App() {
     await window.gapi.client.load('drive', 'v3');
     await window.gapi.client.load('sheets', 'v4');
     const now = new Date(), ds = now.toISOString().slice(0,10);
-    const fileName = `Power Audit ${ds} ${walkthrough}.csv`;
+    const fileName = `Power Audit ${ds} ${selWalkthrough}.csv`;
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
     let csv = header.join(',') + '\n';
     rows.forEach(r => {
@@ -221,11 +224,11 @@ function App() {
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
       const hdrRow = headResp.result.values[0] || [];
-      const colIdx = hdrRow.indexOf(walkthrough);
+      const colIdx = hdrRow.indexOf(selWalkthrough);
       if (colIdx < 0) throw 'Walkthrough not found';
       const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);
-      const rowIdx = secList.indexOf(section);
+      const rowIdx = secList.indexOf(selSection);
       if (rowIdx < 0) throw 'Section not found';
       const target = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+2}`;
       await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });

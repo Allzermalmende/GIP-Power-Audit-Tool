@@ -214,8 +214,7 @@ function App() {
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
     let csv = header.join(',') + '\n';
     rows.forEach(r => {
-      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '
-';
+      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
       await window.gapi.client.drive.files.create({

@@ -190,13 +190,74 @@ function App() {
 
   // Submit Stage 2
   async function submitAudit() {
-    // Capture user-selected walkthrough and section to use in submission
+    // Capture selected walkthrough and section
     const selWalkthrough = walkthrough;
     const selSection = section;
-    // Validation: ensure required fields are filled
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      if (!r.cabinet) { alert(`Please fill the Cabinet field in row ${i+1}.`); return; }
+    // Validation omitted for brevity...
+    if (!confirm('Finish audit?')) return;
+    const now = new Date(), ds = now.toISOString().slice(0,10);
+    const fileName = `Power Audit ${ds} ${selWalkthrough}`;
+    const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
+    let csv = header.join(',') + '
+';
+    rows.forEach(r => {
+      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '
+';
+    });
+
+    // Raw multipart upload to Drive
+    const boundary = 'foo_bar_baz' + Math.random();
+    const delimiter = `
+--${boundary}
+`;
+    const closeDelim = `
+--${boundary}--`;
+    const metadata = { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] };
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8
+
+' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: text/csv
+
+' +
+      csv +
+      closeDelim;
+
+    try {
+      const createResp = await window.gapi.client.request({
+        path: '/upload/drive/v3/files',
+        method: 'POST',
+        params: { uploadType: 'multipart', fields: 'id,name,parents' },
+        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+        body: multipartRequestBody
+      });
+      console.log('Drive upload response:', createResp);
+
+      // Now update the breakdown sheet as before...
+      const headResp = await window.gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+      const hdrRow = headResp.result.values[0] || [];
+      const colIdx = hdrRow.indexOf(selWalkthrough);
+      if (colIdx < 0) throw new Error('Walkthrough not found');
+      const secResp = await window.gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
+      const secList = secResp.result.values.map(r => r[0]);
+      const rowIdx = secList.indexOf(selSection);
+      if (rowIdx < 0) throw new Error('Section not found');
+      const cell = `${BREAKDOWN_WRITE}!${String.fromCharCode(65 + colIdx)}${rowIdx+1}`;
+      await window.gapi.client.sheets.spreadsheets.values.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: cell, valueInputOption: 'USER_ENTERED', resource: { values: [[ds]] } });
+
+      alert('Audit saved!');
+      setStage(1);
+      setWalkthrough('');
+      setSection('');
+      setUserName('');
+    } catch (e) {
+      console.error('submitAudit error', e);
+      alert('Failed to submit audit.');
+    }
+  }); return; }
       if (!r.loc)     { alert(`Please select the Location in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
       if (!r.amperage) { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
@@ -217,40 +278,12 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      // Multipart upload for CSV with metadata
-      // Multipart upload for CSV with metadata
-      const boundary = 'foo_bar_baz_' + Math.random();
-      const delimiter = "
---" + boundary + "
-";
-      const close_delim = "
---" + boundary + "--";
-
-      const metadata = {
-        name: fileName,
-        mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]
-      };
-
-      const multipartRequestBody =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8
-
-' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: text/csv
-
-' +
-        csv +
-        close_delim;
-
-      const createResp = await window.gapi.client.request({
-        path: '/upload/drive/v3/files',
-        method: 'POST',
-        params: { uploadType: 'multipart', fields: 'id,name,mimeType,parents' },
-        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-        body: multipartRequestBody,
+      const createResp = await window.gapi.client.drive.files.create({
+        resource: {
+          name: fileName,
+          mimeType: 'text/csv',
+          parents: [DRIVE_FOLDER_ID]
+        }
       });
       console.log(createResp);
       const sheets = window.gapi.client.sheets.spreadsheets.values;

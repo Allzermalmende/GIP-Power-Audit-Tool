@@ -217,10 +217,8 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      await window.gapi.client.drive.files.create({
-        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
-        media: { mimeType: 'text/csv', body: csv }
-      });
+      const createResp = $1
+      console.log(createResp);
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
       const hdrRow = headResp.result.values[0] || [];

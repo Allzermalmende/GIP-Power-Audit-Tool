@@ -217,10 +217,38 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      await window.gapi.client.drive.files.create({
-        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
-        media: { mimeType: 'text/csv', body: csv },
-        uploadType: 'multipart'
+      // Create CSV via multipart upload to ensure metadata (name, parents) and content
+      const boundary = '-------314159265358979323846';
+      const delimiter = "
+--" + boundary + "
+";
+      const closeDelim = "
+--" + boundary + "--";
+      const metadata = {
+        name: fileName,
+        mimeType: 'text/csv',
+        parents: [DRIVE_FOLDER_ID]
+      };
+      const multipartRequestBody =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8
+
+' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: text/csv
+
+' +
+        csv +
+        closeDelim;
+
+      await window.gapi.client.request({
+        path: '/upload/drive/v3/files?uploadType=multipart',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/related; boundary=' + boundary
+        },
+        body: multipartRequestBody
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });

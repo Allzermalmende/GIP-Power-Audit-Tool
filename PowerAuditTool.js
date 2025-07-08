@@ -42,35 +42,16 @@ function App() {
 
   // Load gapi client libraries
   useEffect(() => {
-    window.gapi.load('client', () => {
-      window.gapi.client.init({ apiKey: API_KEY, discoveryDocs: DISCOVERY_DOCS })
-        .then(() => setGapiLoaded(true))
-        .catch(e => console.error('gapi.client.init error', e));
-    });
-  }, []);
-
-  // Initialize GIS token client once gapi is ready
-  useEffect(() => {
-    if (gapiLoaded && !tokenClient) {
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (resp) => {
-          if (resp.error) {
-            console.error('Token client error', resp);
-            return;
-          }
-          setAccessToken(resp.access_token);
-        },
-      });
-      setTokenClient(client);
-    }
-  }, [gapiLoaded]);
-
-  // Once we have an access token, load the breakdown data
-  useEffect(() => {
     if (accessToken) {
       loadWalkthroughs();
+      // Fetch user's display name via Drive API
+      window.gapi.client.drive.about.get({ fields: 'user(displayName,permissionId)' })
+        .then(resp => {
+          const user = resp.result.user || {};
+          const name = user.displayName || user.permissionId || '';
+          setUserName(name);
+        })
+        .catch(err => console.error('Failed to fetch user profile', err));
     }
   }, [accessToken]);
 
@@ -213,7 +194,7 @@ function App() {
             : React.createElement('div', null,
                 'Walkthrough: ', React.createElement('select', { value: walkthrough, onChange: e=> handleWalkthroughChange(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
                 'Section: ', React.createElement('select', { value: section, onChange:e=>setSection(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), sectionsList.map(s=>React.createElement('option',{key:s,value:s}, s))), React.createElement('br'),
-                'Auditor: ', React.createElement('input',{ value:userName, onChange:e=>setUserName(e.target.value), placeholder:'Your name' }), React.createElement('br'),
+                'Welcome, ' + (userName || ''), React.createElement('br'),
                 React.createElement('button', { onClick: proceedToStage2 }, 'Proceed')
               )
         )

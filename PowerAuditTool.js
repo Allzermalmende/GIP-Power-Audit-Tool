@@ -213,7 +213,7 @@ function App() {
             : React.createElement('div', null,
                 'Walkthrough: ', React.createElement('select', { value: walkthrough, onChange: e=> handleWalkthroughChange(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
                 'Section: ', React.createElement('select', { value: section, onChange:e=>setSection(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), sectionsList.map(s=>React.createElement('option',{key:s,value:s}, s))), React.createElement('br'),
-                'Auditor: ', React.createElement('input',{ value:userName, onChange:e=>setUserName(e.target.value), placeholder:'Your name' }), React.createElement('br'),
+                React.createElement('div', null, `Welcome, ${userName}`), React.createElement('br'),
                 React.createElement('button', { onClick: proceedToStage2 }, 'Proceed')
               )
         )

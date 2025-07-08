@@ -23,6 +23,38 @@ const DISCOVERY_DOCS = [
 // OAuth scopes
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
 
+// Utility to upload CSV via multipart to Drive with metadata & content
+async function uploadCsvToDrive({ csv, fileName, folderId, accessToken }) {
+  const boundary = '-------314159265358979323846';
+  const delimiter = '
+--' + boundary + '
+';
+  const closeDelim = '
+--' + boundary + '--';
+  const metadata = { name: fileName, mimeType: 'text/csv', parents: [folderId] };
+  const multipartRequestBody =
+    delimiter +
+    'Content-Type: application/json; charset=UTF-8
+
+' +
+    JSON.stringify(metadata) +
+    delimiter +
+    'Content-Type: text/csv
+
+' +
+    csv +
+    closeDelim;
+  const response = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,parents`,
+    {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary=' + boundary },
+      body: multipartRequestBody,
+    }
+  );
+  return response.json();
+}
+
 function App() {
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [tokenClient, setTokenClient] = useState(null);
@@ -217,12 +249,9 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      // Create the file via Google API client
-      const createResp = await window.gapi.client.drive.files.create({
-        resource: { name: fileName, parents: [DRIVE_FOLDER_ID], mimeType: 'text/csv' },
-        media: { mimeType: 'text/csv', body: csv }
-      });
-      console.log(createResp);
+      // Upload CSV via multipart utility
+      const fileResource = await uploadCsvToDrive({ csv, fileName: fileName, folderId: DRIVE_FOLDER_ID, accessToken });
+      console.log(fileResource);
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
       const hdrRow = headResp.result.values[0] || [];

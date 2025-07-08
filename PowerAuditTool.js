@@ -21,7 +21,7 @@ const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4'
 ];
 // OAuth scopes
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
 function App() {
   const [gapiLoaded, setGapiLoaded] = useState(false);
@@ -217,38 +217,9 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      // Create CSV via multipart upload to ensure metadata (name, parents) and content
-      const boundary = '-------314159265358979323846';
-      const delimiter = "
---" + boundary + "
-";
-      const closeDelim = "
---" + boundary + "--";
-      const metadata = {
-        name: fileName,
-        mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]
-      };
-      const multipartRequestBody =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8
-
-' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: text/csv
-
-' +
-        csv +
-        closeDelim;
-
-      await window.gapi.client.request({
-        path: '/upload/drive/v3/files?uploadType=multipart',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/related; boundary=' + boundary
-        },
-        body: multipartRequestBody
+      await window.gapi.client.drive.files.create({
+        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
+        media: { mimeType: 'text/csv', body: csv }
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
@@ -263,7 +234,7 @@ function App() {
       const rowIdx = secList.indexOf(selSection);
       if (rowIdx < 0) throw 'Section not found';
       const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
-      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'USER_ENTERED', resource:{ values:[[ds]] } });
+      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
       alert('Audit saved!');
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');
     } catch (e) {

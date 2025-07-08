@@ -26,11 +26,11 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googlea
 // Utility to upload CSV via multipart to Drive with metadata & content
 async function uploadCsvToDrive({ csv, fileName, folderId, accessToken }) {
   const boundary = '-------314159265358979323846';
-  const delimiter = '
---' + boundary + '
-';
-  const closeDelim = '
---' + boundary + '--';
+  const delimiter = "
+--" + boundary + "
+";
+  const closeDelim = "
+--" + boundary + "--";
   const metadata = { name: fileName, mimeType: 'text/csv', parents: [folderId] };
   const multipartRequestBody =
     delimiter +
@@ -48,7 +48,10 @@ async function uploadCsvToDrive({ csv, fileName, folderId, accessToken }) {
     `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,parents`,
     {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary=' + boundary },
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      },
       body: multipartRequestBody,
     }
   );

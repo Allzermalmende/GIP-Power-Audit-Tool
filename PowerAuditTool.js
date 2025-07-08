@@ -217,7 +217,9 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      await window.gapi.client.drive.files.create({$1,
+      await window.gapi.client.drive.files.create({
+        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
+        media: { mimeType: 'text/csv', body: csv },
         uploadType: 'multipart'
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;

@@ -260,7 +260,20 @@ function App() {
               React.createElement('td', null, React.createElement('input',{value:r.label,readOnly:true})),
               React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('if devices are attached to the power strip and you see a reading of zero: please enter 0.0, otherwise: please log the issue."');}})),
               React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
-              React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, React.createElement('option',{value:''}), React.createElement('option',null,'Previous information doesn\'t match'), React.createElement('option',null,'Other'))),
+              React.createElement('td', null, r.issue && React.createElement('select', { value: r.info, onChange: e => updateRow(i, 'info', e.target.value) },
+                    React.createElement('option', { value: '' }, '-- select --'),
+                    React.createElement('option', null, "Previous information doesn't match"),
+                    React.createElement('option', null, 'Cabinet not found'),
+                    React.createElement('option', null, 'Power strip not found'),
+                    React.createElement('option', null, 'Power strip unplugged'),
+                    React.createElement('option', null, 'Power strip connected but has no power'),
+                    React.createElement('option', null, 'Cabinet vacant'),
+                    React.createElement('option', null, 'Power strp powered but no device is plugged into it'),
+                    React.createElement('option', null, 'Reading screen not found'),
+                    React.createElement('option', null, 'Reads as error'),
+                    React.createElement('option', null, 'Reading unavailable'),
+                    React.createElement('option', null, 'Other')
+                  ))),
               React.createElement('td', null, (r.info==='Other') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),
               React.createElement('td', null, r.userAdded && React.createElement('button', { onClick: () => deleteRow(i) }, 'Delete'))
             )))

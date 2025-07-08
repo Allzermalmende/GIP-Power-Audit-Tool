@@ -74,6 +74,22 @@ function App() {
     }
   }, [accessToken]);
 
+  // Fetch signed-in user's profile (displayName or permissionId) once authenticated
+  useEffect(() => {
+    if (!accessToken) return;
+    // Load Drive API for about.get
+    window.gapi.client.load('drive', 'v3')
+      .then(() => window.gapi.client.drive.about.get({ fields: 'user(displayName,permissionId)' }))
+      .then(resp => {
+        const user = resp.result.user || {};
+        let name = user.displayName || user.permissionId || '';
+        // Use first name if full name present
+        if (name.includes(' ')) name = name.split(' ')[0];
+        setUserName(name);
+      })
+      .catch(err => console.error('Failed to fetch user profile', err));
+  }, [accessToken]);
+
   // Trigger GIS consent flow
   function handleAuth() {
     tokenClient.requestAccessToken({ prompt: '' });

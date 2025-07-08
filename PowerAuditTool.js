@@ -260,9 +260,9 @@ function App() {
               : React.createElement('th', { key: h }, h)
             ))),
             React.createElement('tbody', null, rows.map((r,i)=>React.createElement('tr',{key:i},
-              React.createElement('td', null, React.createElement('input',{value:r.cabinet, readOnly: r.info !== "Previous information doesn't match"})),
-              React.createElement('td', null, React.createElement('input',{value:r.loc,     readOnly: r.info !== "Previous information doesn't match"})),
-              React.createElement('td', null, React.createElement('input',{value:r.label,   readOnly: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{value:r.cabinet, disabled: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{value:r.loc, disabled: r.info !== "Previous information doesn't match"})),
+              React.createElement('td', null, React.createElement('input',{value:r.label, disabled: r.info !== "Previous information doesn't match"})),
               React.createElement('td', null, React.createElement('input',{type:'number',step:'0.1',value:r.amperage,onChange:e=>updateRow(i,'amperage',e.target.value),onBlur:e=>{if(e.target.value==='0')alert('If devices are attached to the power strip and you see a reading of zero: please enter 0.0, otherwise: please log the issue.');}})),
               React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
               React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value),onBlur:e=>{if(e.target.value==='Power strip not found' || e.target.value==='Reading screen not found')alert('Please make sure to check the other side of the cabinet.');}},

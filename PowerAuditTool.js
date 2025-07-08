@@ -217,12 +217,21 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
     });
     try {
-      const createResp = await window.gapi.client.drive.files.create({
-        resource: { name: fileName, mimeType: 'text/csv', parents: [DRIVE_FOLDER_ID] },
-        media: { mimeType: 'text/csv', body: csv },
-        uploadType: 'multipart'
-      });
-      console.log(createResp);
+      // Upload the CSV via direct fetch multipart (to ensure metadata & content)
+      const metadata = { name: fileName, parents: [DRIVE_FOLDER_ID] };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([csv], { type: 'text/csv' }));
+      const uploadResp = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,parents`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + accessToken },
+          body: form
+        }
+      );
+      const fileResource = await uploadResp.json();
+      console.log(fileResource);
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
       const hdrRow = headResp.result.values[0] || [];

@@ -222,12 +222,12 @@ function App() {
         media: { mimeType: 'text/csv', body: csv }
       });
       const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!B1:1` });
+      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
       const hdrRow = headResp.result.values[0] || [];
       const colIdx = hdrRow.indexOf(selWalkthrough);
       if (colIdx < 0) throw 'Walkthrough not found';
       // Column letter: B (66) + index
-      const colLetter = String.fromCharCode(66 + colIdx);
+      const colLetter = String.fromCharCode(65 + colIdx);
       if (colIdx < 0) throw 'Walkthrough not found';
       const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);

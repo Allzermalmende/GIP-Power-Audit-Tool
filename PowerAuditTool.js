@@ -66,7 +66,13 @@ function App() {
 
   // Trigger GIS consent flow
   function handleAuth() {
-    tokenClient.requestAccessToken({ prompt: '' });
+    if (!tokenClient) {
+      console.error('Token client not yet initialized');
+      return;
+    }
+    // Force the consent prompt to ensure a login popup appears
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
   }
 
   // Load breakdown sheet for Stage 1

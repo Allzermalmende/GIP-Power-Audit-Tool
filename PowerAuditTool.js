@@ -168,7 +168,7 @@ function App() {
       data.forEach(row => {
         const cab = row[0];
         for (let c=1; c<=12; c++) {
-          if (row[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: row[c], amperage:'', issue:false, info:'', extra:'' });
+          if (row[c]) newRows.push({ cabinet: cab, loc: locMap[c], label: row[c], amperage:'', issue:false, info:'', extra:'', userAdded: false });
         }
       });
       setRows(newRows);
@@ -181,7 +181,7 @@ function App() {
 
   // Row handlers
   function updateRow(i, f, v) { const u = [...rows]; u[i][f] = v; setRows(u); }
-  function addRow() { setRows([...rows, { cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'' }]); }
+  function addRow() { setRows([...rows, { cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'', userAdded: true }]); }
   function deleteRow(i) { setRows(rows.filter((_, j) => j !== i)); }
 
   // Submit Stage 2
@@ -245,7 +245,7 @@ function App() {
               React.createElement('td', null, React.createElement('input',{type:'checkbox',checked:r.issue,onChange:e=>updateRow(i,'issue',e.target.checked)})),
               React.createElement('td', null, r.issue && React.createElement('select',{value:r.info,onChange:e=>updateRow(i,'info',e.target.value)}, React.createElement('option',{value:''}), React.createElement('option',null,'Previous information doesn\'t match'), React.createElement('option',null,'Other'))),
               React.createElement('td', null, (r.info==='Other') && React.createElement('input',{value:r.extra,onChange:e=>updateRow(i,'extra',e.target.value),placeholder:'Further explanation'})),
-              React.createElement('td', null, React.createElement('button',{onClick:()=>deleteRow(i)},'Delete'))
+              React.createElement('td', null, r.userAdded && React.createElement('button', { onClick: () => deleteRow(i) }, 'Delete'))
             )))
           ),
           React.createElement('button',{onClick:addRow},'Add Row'),

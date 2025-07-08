@@ -214,7 +214,8 @@ function App() {
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
     let csv = header.join(',') + '\n';
     rows.forEach(r => {
-      csv += [r.cabinet,r.loc,r.label,r.amperage,r.issue,r.info,r.extra,now.toISOString(),userName,walkthrough].join(',') + '\n';
+      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '
+';
     });
     try {
       await window.gapi.client.drive.files.create({
@@ -230,7 +231,7 @@ function App() {
       const secList = secResp.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(selSection);
       if (rowIdx < 0) throw 'Section not found';
-      const target = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+2}`;
+      const target = `${BREAKDOWN_WRITE}!${String.fromCharCode(65+colIdx)}${rowIdx+1}`;
       await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
       alert('Audit saved!');
       setStage(1); setWalkthrough(''); setSection(''); setUserName('');

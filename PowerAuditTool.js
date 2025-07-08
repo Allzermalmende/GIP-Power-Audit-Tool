@@ -201,6 +201,9 @@ function App() {
     }
 
     if (!confirm('Finish audit?')) return;
+    // Ensure Drive & Sheets APIs are loaded before submission
+    await window.gapi.client.load('drive', 'v3');
+    await window.gapi.client.load('sheets', 'v4');
     const now = new Date(), ds = now.toISOString().slice(0,10);
     const fileName = `Power Audit ${ds} ${walkthrough}.csv`;
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];

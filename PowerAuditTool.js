@@ -161,6 +161,10 @@ function App() {
 
   const uploadCsv = uploadCsvToDrive;
 
+  function addRow() {
+    setRows([...rows, { cabinet:'', loc:'', label:'', amperage:'', issue:false, info:'', extra:'', userAdded:true }]);
+  }
+
   async function submitAudit() {
     const selWalk=walkthrough, selSec=section;
     for(let i=0;i<rows.length;i++){const r=rows[i]; if(!r.cabinet) return alert(`Fill Cabinet row ${i+1}`); if(!r.loc) return alert(`Fill Location row ${i+1}`); if(!r.label) return alert(`Fill Label row ${i+1}`); if(!r.amperage) return alert(`Fill Amperage row ${i+1}`); if(r.issue&&!r.info) return alert(`Select Issue Type row ${i+1}`); if(r.issue&&(r.info==='Other'||r.info==='Reads as error')&&!r.extra) return alert(`Explain issue row ${i+1}`);}    

@@ -186,6 +186,15 @@ function App() {
 
   // Submit Stage 2
   async function submitAudit() {
+    // Validation: ensure required fields are filled
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r.cabinet) { alert(`Please fill the Cabinet field in row ${i+1}.`); return; }
+      if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
+      if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
+      if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
+    }
+
     if (!confirm('Finish audit?')) return;
     const now = new Date(), ds = now.toISOString().slice(0,10);
     const fileName = `Power Audit ${ds} ${walkthrough}.csv`;

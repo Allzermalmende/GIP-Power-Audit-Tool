@@ -21,7 +21,7 @@ const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4'
 ];
 // OAuth scopes
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 function App() {
   const [gapiLoaded, setGapiLoaded] = useState(false);
@@ -243,6 +243,7 @@ function App() {
         params: { uploadType: 'multipart', fields: 'id,name,mimeType,parents' },
         headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
         body: multipartRequestBody,
+        root: 'https://content.googleapis.com'
       });
       console.log(createResp);
 

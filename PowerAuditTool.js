@@ -204,7 +204,7 @@ function App() {
         return;
       }
     }
-.`); return; }
+.); return; }
       if (!r.loc)     { alert(`Please fill the Location field in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
       if (r.amperage === '') { alert(`Please fill the Amperage field in row ${i+1}.`); return; }

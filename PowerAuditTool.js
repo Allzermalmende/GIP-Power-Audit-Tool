@@ -225,7 +225,7 @@ async function submitAudit() {
     await window.gapi.client.load('drive', 'v3');
     await window.gapi.client.load('sheets', 'v4');
     const now = new Date(), ds = now.toISOString().slice(0,10);
-    const fileName = `Power Audit ${ds} ${selWalkthrough}.csv`;
+    const fileName = `${ds} ${selWalkthrough} ${selSection}.csv`;
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
     // CSV quoting helper to wrap fields with commas, quotes, or newlines
     function quoteField(val) {

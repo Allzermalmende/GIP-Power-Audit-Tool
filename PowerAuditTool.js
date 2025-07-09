@@ -239,7 +239,7 @@ function App() {
 
       // ---- USE FETCH WITH OAUTH TOKEN ----
       const token = window.gapi.client.getToken().access_token;
-      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

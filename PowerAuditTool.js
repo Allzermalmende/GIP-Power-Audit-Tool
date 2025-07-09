@@ -217,7 +217,7 @@ function App() {
       csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '\n';
     });
     try {
-      // Use fetch for multipart upload, not gapi.client.request!
+      // Multipart upload for CSV with metadata
       const boundary = 'foo_bar_baz_' + Math.random();
       const delimiter = `\r\n--${boundary}\r\n`;
       const close_delim = `\r\n--${boundary}--`;
@@ -225,7 +225,7 @@ function App() {
       const metadata = {
         name: fileName,
         mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]
+        parents: [DRIVE_FOLDER_ID]  // <- This must be an array
       };
 
       const multipartRequestBody =
@@ -237,27 +237,40 @@ function App() {
         csv +
         close_delim;
 
-      const uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-      const fetchResp = await fetch(uploadUrl, {
+      const createResp = await window.gapi.client.request({
+        path: '/upload/drive/v3/files',
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'multipart/related; boundary=' + boundary
-        },
-        body: multipartRequestBody
+        params: { uploadType: 'multipart' },
+        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+        body: multipartRequestBody,
       });
-      const uploadResult = await fetchResp.json();
-      console.log('Drive upload response:', uploadResult);
-
-      if (!uploadResult.id) {
-        console.error('Drive upload failed:', uploadResult);
+      console.log('Drive upload response:', createResp);
+      if (!createResp.result.id) {
+        console.error('Full Drive upload response:', createResp);
         throw new Error('Drive upload failed');
       }
-    } catch (err) {
-      console.error('submitAudit error', err);
-      alert('Failed to Submit Audit');
-      return;
+
+      const sheets = window.gapi.client.sheets.spreadsheets.values;
+      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+      const hdrRow = headResp.result.values[0] || [];
+      const colIdx = hdrRow.indexOf(selWalkthrough);
+      if (colIdx < 0) throw 'Walkthrough not found';
+      // Column letter: B (66) + index
+      const colLetter = String.fromCharCode(65 + colIdx);
+      if (colIdx < 0) throw 'Walkthrough not found';
+      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
+      const secList = secResp.result.values.map(r=>r[0]);
+      const rowIdx = secList.indexOf(selSection);
+      if (rowIdx < 0) throw 'Section not found';
+      const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
+      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
+      alert('Audit saved!');
+      setStage(1); setWalkthrough(''); setSection(''); setUserName('');
+    } catch (e) {
+      console.error('submitAudit error', e);
+      alert('Failed to submit audit.');
     }
+  }
 
   if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
 
@@ -332,7 +345,7 @@ function App() {
           React.createElement('button',{onClick:submitAudit},'Submit Audit')
         )
   );
-
+}
 
 // Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));

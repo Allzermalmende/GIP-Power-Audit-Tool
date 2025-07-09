@@ -85,6 +85,7 @@ function App() {
       .then(resp => {
         const user = resp.result.user || {};
         let name = user.displayName || user.permissionId || '';
+        setUserName(name);
       })
       .catch(err => console.error('Failed to fetch user profile', err));
   }, [accessToken]);

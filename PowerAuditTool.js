@@ -225,7 +225,7 @@ function App() {
       const metadata = {
         name: fileName,
         mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]  // <- This must be an array
+        parents: [DRIVE_FOLDER_ID]
       };
 
       const multipartRequestBody =
@@ -237,16 +237,20 @@ function App() {
         csv +
         close_delim;
 
-      const createResp = await window.gapi.client.request({
-        path: '/upload/drive/v3/files',
+      // ---- USE FETCH WITH OAUTH TOKEN ----
+      const token = window.gapi.client.getToken().access_token;
+      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
-        params: { uploadType: 'multipart' },
-        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-        body: multipartRequestBody,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+        },
+        body: multipartRequestBody
       });
-      console.log('Drive upload response:', createResp);
-      if (!createResp.result.id) {
-        console.error('Full Drive upload response:', createResp);
+      const result = await resp.json();
+      console.log('Drive upload response:', result);
+      if (!result.id) {
+        console.error('Full Drive upload response:', result);
         throw new Error('Drive upload failed');
       }
 
@@ -255,9 +259,7 @@ function App() {
       const hdrRow = headResp.result.values[0] || [];
       const colIdx = hdrRow.indexOf(selWalkthrough);
       if (colIdx < 0) throw 'Walkthrough not found';
-      // Column letter: B (66) + index
       const colLetter = String.fromCharCode(65 + colIdx);
-      if (colIdx < 0) throw 'Walkthrough not found';
       const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(selSection);
@@ -270,6 +272,7 @@ function App() {
       console.error('submitAudit error', e);
       alert('Failed to submit audit.');
     }
+
   }
 
   if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');

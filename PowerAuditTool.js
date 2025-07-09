@@ -212,23 +212,22 @@ function App() {
     const now = new Date(), ds = now.toISOString().slice(0,10);
     const fileName = `Power Audit ${ds} ${selWalkthrough}.csv`;
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
-    let csv = header.join(',') + '\n';
+    // CSV quoting helper to wrap fields with commas, quotes, or newlines
+    function quoteField(val) {
+      const str = String(val).replace(/"/g, '""');
+      return /[",
+]/.test(str) ? `"${str}"` : str;
+    }
+    // Build properly quoted CSV
+    let csv = header.map(quoteField).join(',') + '
+';
     rows.forEach(r => {
-      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '\n';
+      const rowArr = [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough];
+      csv += rowArr.map(quoteField).join(',') + '
+';
     });
-    try {
-      // Multipart upload for CSV with metadata
-      const boundary = 'foo_bar_baz_' + Math.random();
-      const delimiter = `\r\n--${boundary}\r\n`;
-      const close_delim = `\r\n--${boundary}--`;
-
-      const metadata = {
-        name: fileName,
-        mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]
-      };
-
-      const multipartRequestBody =
+    // Multipart upload for CSV with metadata
+    const boundary = 'foo_bar_baz_' + Math.random();
         delimiter +
         'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
         JSON.stringify(metadata) +

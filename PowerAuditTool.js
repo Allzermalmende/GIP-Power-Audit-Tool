@@ -214,7 +214,7 @@ function App() {
     const header = ['Cabinet','Location','Label','Amperage','Issue','Info','Extra','DateTime','User','Walkthrough'];
     let csv = header.join(',') + '\n';
     rows.forEach(r => {
-      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',');
+      csv += [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough].join(',') + '\n';
     });
     try {
       // Multipart upload for CSV with metadata
@@ -225,7 +225,7 @@ function App() {
       const metadata = {
         name: fileName,
         mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID]
+        parents: [DRIVE_FOLDER_ID]  // <- This must be an array
       };
 
       const multipartRequestBody =
@@ -245,7 +245,8 @@ function App() {
         body: multipartRequestBody,
         root: 'https://content.googleapis.com'
       });
-      console.log(createResp);
+      console.log('Drive upload response:', createResp);
+      if (!createResp.result.id) throw new Error('Drive upload failed');
 
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });

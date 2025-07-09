@@ -259,7 +259,19 @@ function App() {
       const hdrRow = headResp.result.values[0] || [];
       const colIdx = hdrRow.indexOf(selWalkthrough);
       if (colIdx < 0) throw 'Walkthrough not found';
-      const colLetter = String.fromCharCode(65 + colIdx);
+      // Helper to convert zero-based index to spreadsheet column letter
+      function idxToCol(n) {
+        let s = '';
+        let num = n + 1;
+        while (num > 0) {
+          const rem = (num - 1) % 26;
+          s = String.fromCharCode(65 + rem) + s;
+          num = Math.floor((num - 1) / 26);
+        }
+        return s;
+      }
+      if (colIdx < 0) throw 'Walkthrough not found';
+      const colLetter = idxToCol(colIdx);
       const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
       const secList = secResp.result.values.map(r=>r[0]);
       const rowIdx = secList.indexOf(selSection);

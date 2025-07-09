@@ -286,7 +286,23 @@ async function submitAudit() {
     const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
     await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
     alert('Audit saved!');
-    setStage(1); setWalkthrough(''); setSection(''); setUserName('');
+    setStage(3); setWalkthrough(''); setSection(''); setUserName('');
+    // On stage 3, sign out from OAuth once (effect)
+useEffect(() => {
+  if (stage === 3 && accessToken) {
+    // Google identity logout
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.disableAutoSelect && google.accounts.id.disableAutoSelect();
+      google.accounts.id.revoke && google.accounts.id.revoke(accessToken, () => {});
+    }
+    // Clear token from gapi client too
+    window.gapi.client.setToken('');
+    setAccessToken(null);
+    setTokenClient(null);
+    setUserName('');
+  }
+}, [stage]);
+
   } catch (e) {
     console.error('submitAudit error', e);
     alert('Failed to submit audit.');
@@ -295,6 +311,13 @@ async function submitAudit() {
 
   if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
 
+if (stage === 3) {
+  return React.createElement('div', { style: { padding: 40, textAlign: 'center' } },
+    React.createElement('h2', null, 'Power Audit Complete'),
+    React.createElement('p', null, 'This Power Audit is complete. Please reload this page when you are ready for the next Power Audit.')
+  );
+}
+  
   return React.createElement('div', { style:{ padding: 20 } },
     stage === 1
       ? React.createElement('div', null,

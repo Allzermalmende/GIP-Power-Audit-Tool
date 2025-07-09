@@ -225,7 +225,7 @@ function App() {
       const metadata = {
         name: fileName,
         mimeType: 'text/csv',
-        parents: [DRIVE_FOLDER_ID] // Must be array of string
+        parents: [DRIVE_FOLDER_ID]
       };
 
       const multipartRequestBody =
@@ -253,6 +253,11 @@ function App() {
         console.error('Drive upload failed:', uploadResult);
         throw new Error('Drive upload failed');
       }
+    } catch (err) {
+      console.error('submitAudit error', err);
+      alert('Failed to Submit Audit');
+      return;
+    }
 
   if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
 

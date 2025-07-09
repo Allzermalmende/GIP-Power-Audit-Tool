@@ -90,6 +90,22 @@ function App() {
       .catch(err => console.error('Failed to fetch user profile', err));
   }, [accessToken]);
 
+  // On stage 3, sign out from OAuth once (effect)
+useEffect(() => {
+  if (stage === 3 && accessToken) {
+    // Google identity logout
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.disableAutoSelect && google.accounts.id.disableAutoSelect();
+      google.accounts.id.revoke && google.accounts.id.revoke(accessToken, () => {});
+    }
+    // Clear token from gapi client too
+    window.gapi.client.setToken('');
+    setAccessToken(null);
+    setTokenClient(null);
+    setUserName('');
+  }
+}, [stage]);
+  
   // Trigger GIS consent flow
   function handleAuth() {
     tokenClient.requestAccessToken({ prompt: '' });
@@ -287,22 +303,6 @@ async function submitAudit() {
     await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
     alert('Audit saved!');
     setStage(3); setWalkthrough(''); setSection(''); setUserName('');
-    // On stage 3, sign out from OAuth once (effect)
-useEffect(() => {
-  if (stage === 3 && accessToken) {
-    // Google identity logout
-    if (window.google && google.accounts && google.accounts.id) {
-      google.accounts.id.disableAutoSelect && google.accounts.id.disableAutoSelect();
-      google.accounts.id.revoke && google.accounts.id.revoke(accessToken, () => {});
-    }
-    // Clear token from gapi client too
-    window.gapi.client.setToken('');
-    setAccessToken(null);
-    setTokenClient(null);
-    setUserName('');
-  }
-}, [stage]);
-
   } catch (e) {
     console.error('submitAudit error', e);
     alert('Failed to submit audit.');

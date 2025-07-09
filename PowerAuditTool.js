@@ -85,9 +85,6 @@ function App() {
       .then(resp => {
         const user = resp.result.user || {};
         let name = user.displayName || user.permissionId || '';
-        // Use first name if full name present
-        if (name.includes(' ')) name = name.split(' ')[0];
-        setUserName(name);
       })
       .catch(err => console.error('Failed to fetch user profile', err));
   }, [accessToken]);

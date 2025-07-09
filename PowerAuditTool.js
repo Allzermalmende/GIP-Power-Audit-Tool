@@ -243,10 +243,12 @@ function App() {
         params: { uploadType: 'multipart' },
         headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
         body: multipartRequestBody,
-        root: 'https://content.googleapis.com'
       });
       console.log('Drive upload response:', createResp);
-      if (!createResp.result.id) throw new Error('Drive upload failed');
+      if (!createResp.result.id) {
+        console.error('Full Drive upload response:', createResp);
+        throw new Error('Drive upload failed');
+      }
 
       const sheets = window.gapi.client.sheets.spreadsheets.values;
       const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });

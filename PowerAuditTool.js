@@ -332,7 +332,7 @@ function App() {
           React.createElement('button',{onClick:submitAudit},'Submit Audit')
         )
   );
-}
+
 
 // Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));

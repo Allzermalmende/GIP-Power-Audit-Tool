@@ -189,7 +189,8 @@ function App() {
   function deleteRow(i) { setRows(rows.filter((_, j) => j !== i)); }
 
   // Submit Stage 2
-  async function submitAudit() {
+async function submitAudit() {
+  try {
     // Capture user-selected walkthrough and section to use in submission
     const selWalkthrough = walkthrough;
     const selSection = section;
@@ -219,72 +220,80 @@ function App() {
     }
 
     // Build properly quoted CSV
-let csv = header.map(quoteField).join(',') + '\n';
-
+    let csv = header.map(quoteField).join(',') + '\n';
     rows.forEach(r => {
       const rowArr = [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough];
-csv += rowArr.map(quoteField).join(',') + '\n';
-
+      csv += rowArr.map(quoteField).join(',') + '\n';
     });
+
     // Multipart upload for CSV with metadata
     const boundary = 'foo_bar_baz_' + Math.random();
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: text/csv\r\n\r\n' +
-        csv +
-        close_delim;
+    const delimiter = '\r\n--' + boundary + '\r\n';
+    const close_delim = '\r\n--' + boundary + '--';
 
-      // ---- USE FETCH WITH OAUTH TOKEN ----
-      const token = window.gapi.client.getToken().access_token;
-      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': `multipart/related; boundary=${boundary}`,
-        },
-        body: multipartRequestBody
-      });
-      const result = await resp.json();
-      console.log('Drive upload response:', result);
-      if (!result.id) {
-        console.error('Full Drive upload response:', result);
-        throw new Error('Drive upload failed');
-      }
+    const metadata = {
+      name: fileName,
+      mimeType: 'text/csv',
+      parents: [DRIVE_FOLDER_ID]
+    };
 
-      const sheets = window.gapi.client.sheets.spreadsheets.values;
-      const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
-      const hdrRow = headResp.result.values[0] || [];
-      const colIdx = hdrRow.indexOf(selWalkthrough);
-      if (colIdx < 0) throw 'Walkthrough not found';
-      // Helper to convert zero-based index to spreadsheet column letter
-      function idxToCol(n) {
-        let s = '';
-        let num = n + 1;
-        while (num > 0) {
-          const rem = (num - 1) % 26;
-          s = String.fromCharCode(65 + rem) + s;
-          num = Math.floor((num - 1) / 26);
-        }
-        return s;
-      }
-      if (colIdx < 0) throw 'Walkthrough not found';
-      const colLetter = idxToCol(colIdx);
-      const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
-      const secList = secResp.result.values.map(r=>r[0]);
-      const rowIdx = secList.indexOf(selSection);
-      if (rowIdx < 0) throw 'Section not found';
-      const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
-      await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
-      alert('Audit saved!');
-      setStage(1); setWalkthrough(''); setSection(''); setUserName('');
-    } catch (e) {
-      console.error('submitAudit error', e);
-      alert('Failed to submit audit.');
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: text/csv\r\n\r\n' +
+      csv +
+      close_delim;
+
+    // ---- USE FETCH WITH OAUTH TOKEN ----
+    const token = window.gapi.client.getToken().access_token;
+    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body: multipartRequestBody
+    });
+    const result = await resp.json();
+    console.log('Drive upload response:', result);
+    if (!result.id) {
+      console.error('Full Drive upload response:', result);
+      throw new Error('Drive upload failed');
     }
 
+    const sheets = window.gapi.client.sheets.spreadsheets.values;
+    const headResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!1:1` });
+    const hdrRow = headResp.result.values[0] || [];
+    const colIdx = hdrRow.indexOf(selWalkthrough);
+    if (colIdx < 0) throw 'Walkthrough not found';
+    // Helper to convert zero-based index to spreadsheet column letter
+    function idxToCol(n) {
+      let s = '';
+      let num = n + 1;
+      while (num > 0) {
+        const rem = (num - 1) % 26;
+        s = String.fromCharCode(65 + rem) + s;
+        num = Math.floor((num - 1) / 26);
+      }
+      return s;
+    }
+    if (colIdx < 0) throw 'Walkthrough not found';
+    const colLetter = idxToCol(colIdx);
+    const secResp = await sheets.get({ spreadsheetId: BREAKDOWN_SHEET_ID, range: `${BREAKDOWN_WRITE}!A1:A` });
+    const secList = secResp.result.values.map(r=>r[0]);
+    const rowIdx = secList.indexOf(selSection);
+    if (rowIdx < 0) throw 'Section not found';
+    const target = `${BREAKDOWN_WRITE}!${colLetter}${rowIdx+1}`;
+    await sheets.update({ spreadsheetId: BREAKDOWN_SHEET_ID, range: target, valueInputOption:'RAW', resource:{ values:[[ds]] } });
+    alert('Audit saved!');
+    setStage(1); setWalkthrough(''); setSection(''); setUserName('');
+  } catch (e) {
+    console.error('submitAudit error', e);
+    alert('Failed to submit audit.');
   }
+}
 
   if (!gapiLoaded) return React.createElement('div', null, 'Loading Google API...');
 

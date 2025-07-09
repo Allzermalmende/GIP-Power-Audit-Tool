@@ -215,9 +215,9 @@ function App() {
     // CSV quoting helper to wrap fields with commas, quotes, or newlines
     function quoteField(val) {
       const str = String(val).replace(/"/g, '""');
-      return /[",
-]/.test(str) ? `"${str}"` : str;
+      return /[",\n]/.test(str) ? `"${str}"` : str;
     }
+
     // Build properly quoted CSV
     let csv = header.map(quoteField).join(',') + '
 ';

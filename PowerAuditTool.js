@@ -219,12 +219,12 @@ function App() {
     }
 
     // Build properly quoted CSV
-    let csv = header.map(quoteField).join(',') + '
-';
+let csv = header.map(quoteField).join(',') + '\n';
+
     rows.forEach(r => {
       const rowArr = [r.cabinet, r.loc, r.label, r.amperage, r.issue, r.info, r.extra, now.toISOString(), userName, selWalkthrough];
-      csv += rowArr.map(quoteField).join(',') + '
-';
+csv += rowArr.map(quoteField).join(',') + '\n';
+
     });
     // Multipart upload for CSV with metadata
     const boundary = 'foo_bar_baz_' + Math.random();

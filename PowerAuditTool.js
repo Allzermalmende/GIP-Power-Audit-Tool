@@ -214,7 +214,7 @@ async function submitAudit() {
       if (!r.cabinet) { alert(`Please fill the Cabinet field in row ${i+1}.`); return; }
       if (!r.loc)     { alert(`Please select the Location in row ${i+1}.`); return; }
       if (!r.label)   { alert(`Please fill the Label field in row ${i+1}.`); return; }
-      if (!r.amperage && issue === false) { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
+      if (!r.amperage && r.issue === false) { alert(`Please fill the Amperage field in row ${i+1}.`); return; }
       if (r.issue === true && r.info === '') { alert(`Please select the Issue Type in row ${i+1}.`); return; }
       if (r.issue === true && r.info === 'Reads as error' && !r.extra) { alert(`Please use the Further Explanation field in row ${i+1} to detail the error you found.`); return; }
       if (r.issue === true && r.info === 'Other' && !r.extra) { alert(`Please use the Further Explanation field in row ${i+1} to explain the issue you discovered.`); return; }
@@ -325,7 +325,7 @@ if (stage === 3) {
           accessToken == null
             ? React.createElement('button', { onClick: handleAuth }, 'Sign in with Google')
             : React.createElement('div', null,
-                'Walkthrough: ', React.createElement('select', { value: walkthrough, onChange: e => { const val = e.target.value; setWalkthrough(val); handleWalkthroughChange(val); } }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
+                'Walkthrough: ', React.createElement('select', { value: walkthrough, onChange: e => setWalkthrough(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), walkOptions.map(w=>React.createElement('option',{key:w,value:w}, w))), React.createElement('br'),
                 'Section: ', React.createElement('select', { value: section, onChange:e=>setSection(e.target.value) }, React.createElement('option',{value:''}, '-- select --'), sectionsList.map(s=>React.createElement('option',{key:s,value:s}, s))), React.createElement('br'),
                 React.createElement('div', null, `Welcome, ${userName}`), React.createElement('br'),
                 React.createElement('button', { onClick: proceedToStage2 }, 'Proceed')
